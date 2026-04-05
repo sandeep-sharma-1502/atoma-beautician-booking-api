@@ -69,5 +69,21 @@ app.include_router(api_router, prefix=settings.API_V1_STR)
 
 @app.get("/health", tags=["system"], summary="Health Check")
 async def health_check():
-    """Returns the operational status of the API server."""
-    return {"status": "ok", "version": settings.VERSION, "service": settings.PROJECT_NAME}
+    """Returns the operational status of the API server and Redis connection status."""
+    from app.core.redis import get_redis_client
+    
+    redis_status = "unavailable"
+    client = get_redis_client()
+    if client:
+        try:
+            await client.ping()
+            redis_status = "ok"
+        except Exception:
+            redis_status = "error"
+
+    return {
+        "status": "ok", 
+        "version": settings.VERSION, 
+        "service": settings.PROJECT_NAME,
+        "redis_status": redis_status
+    }
